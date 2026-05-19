@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EstateScript — Générateur de Fiches Immobilières</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0f1923;
+      --navy-mid: #1a2b3c;
+      --navy-light: #243347;
+      --gold: #c9a96e;
+      --gold-light: #e2c99b;
+      --gold-pale: #f5ead8;
+      --cream: #faf7f2;
+      --white: #ffffff;
+      --text-primary: #0f1923;
+      --text-muted: #5a6a7a;
+      --border: #ddd4c3;
+      --border-light: #ede8df;
+      --success: #2d7a5f;
+      --radius: 3px;
+      --shadow: 0 2px 24px rgba(15,25,35,0.07);
+      --shadow-lg: 0 8px 48px rgba(15,25,35,0.13);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(201,169,110,0.2);
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+
+    .logo span { color: var(--gold); }
+
+    .tagline {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    /* ── API KEY BAR ── */
+    .api-bar {
+      background: var(--navy-mid);
+      padding: 12px 48px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid rgba(201,169,110,0.15);
+    }
+
+    .api-bar label {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      white-space: nowrap;
+      font-weight: 400;
+    }
+
+    .api-bar input {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(201,169,110,0.25);
+      color: rgba(255,255,255,0.8);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 300;
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .api-bar input:focus { border-color: var(--gold); }
+    .api-bar input::placeholder { color: rgba(255,255,255,0.25); font-style: italic; }
+
+    .api-status {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.3);
+      white-space: nowrap;
+    }
+
+    .api-status.valid { color: #6ecfa3; }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 48px 80px;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: sticky;
+      top: 120px;
+    }
+
+    .panel-header {
+      background: var(--navy);
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-header-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(201,169,110,0.15);
+      border: 1px solid rgba(201,169,110,0.3);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-header-icon svg { width: 16px; height: 16px; stroke: var(--gold); fill: none; }
+
+    .panel-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: 0.03em;
+    }
+
+    .panel-subtitle {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .form-body { padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── FORM GROUPS ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-group label {
+      font-size: 0.7rem;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .form-group label span.req { color: var(--gold); margin-left: 2px; }
+
+    .form-control {
+      width: 100%;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 300;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .form-control:focus { border-color: var(--gold); background: var(--white); }
+
+    select.form-control {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a96e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    /* ── CHECKBOXES ── */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      background: var(--cream);
+      transition: border-color 0.18s, background 0.18s;
+      user-select: none;
+    }
+
+    .checkbox-item:hover { border-color: var(--gold-light); background: var(--white); }
+
+    .checkbox-item input[type="checkbox"] { display: none; }
+
+    .checkbox-item .check-box {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .checkbox-item input:checked ~ .check-box {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .checkbox-item input:checked ~ .check-box::after {
+      content: '';
+      width: 8px;
+      height: 5px;
+      border-left: 1.5px solid white;
+      border-bottom: 1.5px solid white;
+      transform: rotate(-45deg) translateY(-1px);
+      display: block;
+    }
+
+    .checkbox-item .check-label {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-weight: 300;
+    }
+
+    .checkbox-item:has(input:checked) {
+      border-color: var(--gold-light);
+      background: var(--gold-pale);
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0;
+    }
+
+    .section-divider span {
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    /* ── GENERATE BUTTON ── */
+    .btn-generate {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-generate::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+
+    .btn-generate:hover { background: var(--navy-mid); }
+    .btn-generate:hover::before { transform: scaleX(1); }
+    .btn-generate:active { transform: scale(0.99); }
+
+    .btn-generate.loading {
+      pointer-events: none;
+      background: var(--navy-light);
+    }
+
+    .btn-generate svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULTS PANEL ── */
+    .results-panel { display: flex; flex-direction: column; gap: 28px; }
+
+    .results-header {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .results-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+
+    .results-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 40px;
+      text-align: center;
+      background: var(--white);
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      gap: 16px;
+    }
+
+    .empty-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--gold-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-icon svg { width: 26px; height: 26px; stroke: var(--gold); fill: none; }
+
+    .empty-state h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .empty-state p {
+      font-size: 0.82rem;
+      color: #8a9aaa;
+      max-width: 300px;
+      line-height: 1.7;
+    }
+
+    /* ── LANGUAGE CARDS ── */
+    .lang-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .lang-card.visible { opacity: 1; transform: translateY(0); }
+
+    .lang-card-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .lang-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lang-flag {
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .lang-name {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .lang-native {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.9rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-copy:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-copy.copied { border-color: var(--success); color: var(--success); }
+
+    .btn-copy svg { width: 12px; height: 12px; }
+
+    .lang-card-body { padding: 20px; }
+
+    .lang-text {
+      font-size: 0.88rem;
+      line-height: 1.85;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      font-weight: 300;
+      min-height: 80px;
+    }
+
+    .lang-text.loading-text {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── SKELETON ── */
+    .skeleton-line {
+      height: 12px;
+      background: linear-gradient(90deg, #f0ece6 25%, #e6e0d8 50%, #f0ece6 75%);
+      background-size: 200% 100%;
+      border-radius: 2px;
+      animation: shimmer 1.2s infinite;
+      margin-bottom: 10px;
+    }
+
+    .skeleton-line:last-child { width: 60%; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── ERROR ── */
+    .error-banner {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 0.82rem;
+      color: #dc2626;
+      gap: 10px;
+      align-items: flex-start;
+      line-height: 1.6;
+    }
+
+    .error-banner.show { display: flex; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 48px;
+      border-top: 1px solid var(--border-light);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    footer strong { color: var(--gold); font-weight: 400; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; padding: 24px 20px 60px; gap: 28px; }
+      header, .api-bar { padding: 0 20px; }
+      header { height: 58px; }
+      .form-panel { position: static; }
+      footer { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Estate<span>Script</span></div>
+    <div class="tagline">Générateur de Fiches Immobilières — Côte d'Azur</div>
+  </header>
+
+  <!-- API KEY BAR -->
+  <div class="api-bar">
+    <label for="apiKey">Clé API Gemini</label>
+    <input type="password" id="apiKey" placeholder="AIza••••••••••••••••••••••••••••••••••••••••" autocomplete="off" />
+    <span class="api-status" id="apiStatus">Non configurée</span>
+  </div>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- FORM PANEL -->
+    <aside class="form-panel">
+      <div class="panel-header">
+        <div class="panel-header-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V21H3V9.5z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 21V13h6v8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="panel-title">Informations du Bien</div>
+          <div class="panel-subtitle">Remplissez les détails du bien</div>
+        </div>
+      </div>
+
+      <div class="form-body">
+
+        <!-- Type + Standing -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type de bien <span class="req">*</span></label>
+            <select id="propertyType" class="form-control">
+              <option value="">Sélectionner…</option>
+              <option value="villa">Villa</option>
+              <option value="appartement">Appartement</option>
+              <option value="studio">Studio</option>
+              <option value="mas">Mas</option>
+              <option value="penthouse">Penthouse</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Standing <span class="req">*</span></label>
+            <select id="standing" class="form-control">
+              <option value="">Sélectionner…</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="luxe">Luxe</option>
+              <option value="ultra-luxe">Ultra-Luxe</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Surface + Pièces -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Surface <span class="req">*</span></label>
+            <input type="number" id="surface" class="form-control" placeholder="ex. 120" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Nb de pièces</label>
+            <input type="number" id="rooms" class="form-control" placeholder="ex. 4" min="1" max="20" />
+          </div>
+        </div>
+
+        <!-- Étage + Vue -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Étage</label>
+            <input type="text" id="floor" class="form-control" placeholder="ex. 3e / RDC" />
+          </div>
+          <div class="form-group">
+            <label>Vue</label>
+            <select id="view" class="form-control">
+              <option value="">Sélectionner…</option>
+              <option value="mer">Mer</option>
+              <option value="montagne">Montagne</option>
+              <option value="jardin">Jardin</option>
+              <option value="ville">Ville</option>
+              <option value="aucune">Aucune vue particulière</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quartier -->
+        <div class="form-group">
+          <label>Quartier / Localisation</label>
+          <input type="text" id="neighborhood" class="form-control" placeholder="ex. Cap d'Antibes, Cannes Croisette…" />
+        </div>
+
+        <!-- Prix -->
+        <div class="form-group">
+          <label>Prix <span class="req">*</span></label>
+          <input type="text" id="price" class="form-control" placeholder="ex. 1 250 000 €" />
+        </div>
+
+        <div class="section-divider"><span>Équipements</span></div>
+
+        <!-- Équipements -->
+        <div class="form-group">
+          <div class="checkbox-grid">
+            <label class="checkbox-item">
+              <input type="checkbox" name="amenities" value="piscine" />
+              <span class="check-box"></span>
+              <span class="check-label">🏊 Piscine</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="amenities" value="parking" />
+              <span class="check-box"></span>
+              <span class="check-label">🚗 Parking</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="amenities" value="terrasse" />
+              <span class="check-box"></span>
+              <span class="check-label">🌿 Terrasse</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="amenities" value="cave" />
+              <span class="check-box"></span>
+              <span class="check-label">🍷 Cave</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="amenities" value="gardien" />
+              <span class="check-box"></span>
+              <span class="check-label">🔐 Gardien</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-banner" id="errorBanner">
+          <span id="errorText"></span>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="btn-generate" id="generateBtn" onclick="generateListings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+          </svg>
+          Générer les Descriptions
+        </button>
+
+      </div>
+    </aside>
+
+    <!-- RESULTS PANEL -->
+    <section class="results-panel" id="resultsPanel">
+
+      <div class="results-header">
+        <h2 class="results-title">Descriptions Générées</h2>
+        <p class="results-meta" id="resultsMeta">En attente de génération</p>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+        </div>
+        <h3>Aucune description générée</h3>
+        <p>Remplissez le formulaire et cliquez sur "Générer" pour obtenir vos descriptions en 4 langues.</p>
+      </div>
+
+      <!-- Language Cards -->
+      <div id="langCards" style="display:none; display:flex; flex-direction:column; gap:20px; display:none;">
+
+        <div class="lang-card" id="card-fr">
+          <div class="lang-card-header">
+            <div class="lang-badge">
+              <span class="lang-flag">🇫🇷</span>
+              <div>
+                <div class="lang-name">Français</div>
+                <div class="lang-native">French</div>
+              </div>
+            </div>
+            <button class="btn-copy" onclick="copyText('fr')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copier
+            </button>
+          </div>
+          <div class="lang-card-body">
+            <div class="lang-text" id="text-fr"></div>
+          </div>
+        </div>
+
+        <div class="lang-card" id="card-en">
+          <div class="lang-card-header">
+            <div class="lang-badge">
+              <span class="lang-flag">🇬🇧</span>
+              <div>
+                <div class="lang-name">Anglais</div>
+                <div class="lang-native">English</div>
+              </div>
+            </div>
+            <button class="btn-copy" onclick="copyText('en')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="lang-card-body">
+            <div class="lang-text" id="text-en"></div>
+          </div>
+        </div>
+
+        <div class="lang-card" id="card-de">
+          <div class="lang-card-header">
+            <div class="lang-badge">
+              <span class="lang-flag">🇩🇪</span>
+              <div>
+                <div class="lang-name">Allemand</div>
+                <div class="lang-native">Deutsch</div>
+              </div>
+            </div>
+            <button class="btn-copy" onclick="copyText('de')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Kopieren
+            </button>
+          </div>
+          <div class="lang-card-body">
+            <div class="lang-text" id="text-de"></div>
+          </div>
+        </div>
+
+        <div class="lang-card" id="card-ru">
+          <div class="lang-card-header">
+            <div class="lang-badge">
+              <span class="lang-flag">🇷🇺</span>
+              <div>
+                <div class="lang-name">Russe</div>
+                <div class="lang-native">Русский</div>
+              </div>
+            </div>
+            <button class="btn-copy" onclick="copyText('ru')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Копировать
+            </button>
+          </div>
+          <div class="lang-card-body">
+            <div class="lang-text" id="text-ru"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  </main>
+
+  <footer>
+    <strong>EstateScript</strong> — Descriptions immobilières professionnelles générées par IA &nbsp;·&nbsp; Powered by Google Gemini
+  </footer>
+
+  <script>
+    // ── API KEY STATUS ──
+    const apiKeyInput = document.getElementById('apiKey');
+    const apiStatus = document.getElementById('apiStatus');
+
+    apiKeyInput.addEventListener('input', () => {
+      const val = apiKeyInput.value.trim();
+      if (val.startsWith('AIza') && val.length > 20) {
+        apiStatus.textContent = '✓ Clé détectée';
+        apiStatus.className = 'api-status valid';
+      } else if (val.length > 0) {
+        apiStatus.textContent = 'Format invalide';
+        apiStatus.className = 'api-status';
+      } else {
+        apiStatus.textContent = 'Non configurée';
+        apiStatus.className = 'api-status';
+      }
+    });
+
+    // ── HELPERS ──
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      document.getElementById('errorText').textContent = msg;
+      banner.classList.add('show');
+    }
+
+    function hideError() {
+      document.getElementById('errorBanner').classList.remove('show');
+    }
+
+    function showSkeleton(id) {
+      const el = document.getElementById('text-' + id);
+      el.innerHTML = Array(5).fill(0).map((_, i) =>
+        `<div class="skeleton-line" style="width:${[100,92,100,88,60][i]}%; animation-delay:${i*0.08}s"></div>`
+      ).join('');
+      el.classList.add('loading-text');
+    }
+
+    function setCardText(id, text) {
+      const el = document.getElementById('text-' + id);
+      el.innerHTML = '';
+      el.textContent = text;
+      el.classList.remove('loading-text');
+      setTimeout(() => {
+        document.getElementById('card-' + id).classList.add('visible');
+      }, 50);
+    }
+
+    // ── COPY ──
+    function copyText(lang) {
+      const text = document.getElementById('text-' + lang).textContent;
+      if (!text.trim()) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector(`#card-${lang} .btn-copy`);
+        const original = btn.innerHTML;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copié !`;
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    // ── BUILD PROMPT ──
+    function buildPrompt(data) {
+      const amenities = data.amenities.length > 0
+        ? data.amenities.join(', ')
+        : 'aucun équipement spécifique mentionné';
+
+      return `Tu es un rédacteur immobilier expert spécialisé dans l'immobilier de prestige sur la Côte d'Azur.
+
+Génère une description immobilière professionnelle et séduisante pour le bien suivant :
+- Type de bien : ${data.type}
+- Surface : ${data.surface} m²
+${data.rooms ? `- Nombre de pièces : ${data.rooms}` : ''}
+${data.floor ? `- Étage : ${data.floor}` : ''}
+${data.view && data.view !== 'aucune' ? `- Vue : ${data.view}` : ''}
+- Équipements : ${amenities}
+${data.neighborhood ? `- Quartier / localisation : ${data.neighborhood}` : ''}
+- Prix : ${data.price}
+- Standing : ${data.standing}
+
+Instructions importantes :
+- Écris 4 descriptions SÉPARÉES, une par langue, dans cet ordre exact : français, anglais, allemand, russe
+- Chaque description doit faire entre 120 et 180 mots
+- Adapte le ton au niveau de standing (ultra-luxe = très exclusif et élitiste, luxe = raffiné et élégant, premium = haut de gamme, standard = sérieux et professionnel)
+- Mets en valeur les points forts du bien
+- Utilise un vocabulaire immobilier authentique propre à chaque langue
+- Ne mentionne PAS le prix dans la description
+- Ne génère AUCUN titre, AUCUNE intro, AUCUN label de langue
+- Sépare les 4 descriptions UNIQUEMENT par la balise exacte : |||SEPARATOR|||
+- Aucun texte avant la première description ni après la dernière
+
+Format de réponse attendu :
+[description en français]|||SEPARATOR|||[description en anglais]|||SEPARATOR|||[description en allemand]|||SEPARATOR|||[description en russe]`;
+    }
+
+    // ── MAIN GENERATE ──
+    async function generateListings() {
+      hideError();
+
+      // Gather form data
+      const apiKey = apiKeyInput.value.trim();
+      const type = document.getElementById('propertyType').value;
+      const surface = document.getElementById('surface').value;
+      const rooms = document.getElementById('rooms').value;
+      const floor = document.getElementById('floor').value;
+      const view = document.getElementById('view').value;
+      const neighborhood = document.getElementById('neighborhood').value;
+      const price = document.getElementById('price').value;
+      const standing = document.getElementById('standing').value;
+      const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
+        .map(cb => cb.value);
+
+      // Validate
+      if (!apiKey || !apiKey.startsWith('AIza')) {
+        showError('Veuillez saisir une clé API Gemini valide (format AIza…) dans la barre en haut.');
+        return;
+      }
+      if (!type) { showError('Veuillez sélectionner un type de bien.'); return; }
+      if (!surface) { showError('Veuillez indiquer la surface en m².'); return; }
+      if (!price) { showError('Veuillez indiquer le prix du bien.'); return; }
+      if (!standing) { showError('Veuillez sélectionner le niveau de standing.'); return; }
+
+      // UI: loading state
+      const btn = document.getElementById('generateBtn');
+      btn.classList.add('loading');
+      btn.innerHTML = '<div class="spinner"></div> Génération en cours…';
+
+      document.getElementById('emptyState').style.display = 'none';
+      const langCards = document.getElementById('langCards');
+      langCards.style.display = 'flex';
+
+      ['fr', 'en', 'de', 'ru'].forEach(lang => {
+        document.getElementById('card-' + lang).classList.remove('visible');
+        showSkeleton(lang);
+      });
+
+      document.getElementById('resultsMeta').textContent = 'Appel à l\'API Gemini en cours…';
+
+      const data = { type, surface, rooms, floor, view, neighborhood, price, standing, amenities };
+      const prompt = buildPrompt(data);
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.85,
+                maxOutputTokens: 2048,
+              }
+            })
+          }
+        );
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const msg = errData?.error?.message || `Erreur HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+
+        const json = await res.json();
+        const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        if (!raw.includes('|||SEPARATOR|||')) {
+          // Try to split on double newlines as fallback
+          console.warn('Separator not found, raw response:', raw);
+          throw new Error('La réponse de l\'API n\'a pas le format attendu. Réessayez.');
+        }
+
+        const parts = raw.split('|||SEPARATOR|||').map(s => s.trim());
+
+        if (parts.length < 4) {
+          throw new Error('Réponse incomplète reçue. Réessayez.');
+        }
+
+        const langs = ['fr', 'en', 'de', 'ru'];
+        langs.forEach((lang, i) => {
+          setTimeout(() => setCardText(lang, parts[i] || ''), i * 120);
+        });
+
+        const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('resultsMeta').textContent =
+          `4 descriptions générées · ${type.charAt(0).toUpperCase() + type.slice(1)} ${surface} m² · ${now}`;
+
+      } catch (err) {
+        console.error(err);
+        showError('Erreur : ' + err.message);
+        document.getElementById('resultsMeta').textContent = 'Erreur lors de la génération';
+        document.getElementById('emptyState').style.display = 'flex';
+        langCards.style.display = 'none';
+      } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+          </svg>
+          Générer les Descriptions`;
+      }
+    }
+  </script>
+</body>
+</html>
